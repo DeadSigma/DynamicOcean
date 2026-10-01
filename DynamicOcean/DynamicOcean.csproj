@@ -1,0 +1,176 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<LangVersion>7.3</LangVersion>
+		<PlatformTarget>x64</PlatformTarget>
+
+		<AssemblyName>DynamicOcean</AssemblyName>
+		<RootNamespace>DynamicOcean</RootNamespace>
+
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>bin\$(Configuration)\</OutputPath>
+
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>disable</Nullable>
+
+		<RaftDir Condition="'$(RaftDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Raft</RaftDir>
+
+		<RmlDir Condition="'$(RmlDir)' == ''">$(APPDATA)\RaftModLoader</RmlDir>
+		<RmlBinariesDir>$(RmlDir)\binaries</RmlBinariesDir>
+		<RmlPublicizedDir>$(RmlDir)\cache\publicizedAssemblies</RmlPublicizedDir>
+
+		<RaftExePath>$(RaftDir)\Raft.exe</RaftExePath>
+		<RaftModsDir>$(RaftDir)\mods</RaftModsDir>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>$(RmlPublicizedDir)\Assembly-CSharp.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="HMLCoreLibrary">
+			<HintPath>$(RmlBinariesDir)\HMLCoreLibrary.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="coremod">
+			<HintPath>$(RmlBinariesDir)\coremod.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="0Harmony">
+			<HintPath>$(RmlBinariesDir)\0Harmony.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="SemanticVersion">
+			<HintPath>$(RmlBinariesDir)\SemanticVersion.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="SharpZipLib">
+			<HintPath>$(RmlBinariesDir)\SharpZipLib.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="UnityEngine">
+			<HintPath>$(RaftDir)\Raft_Data\Managed\UnityEngine.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>$(RaftDir)\Raft_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="UnityEngine.PhysicsModule">
+			<HintPath>$(RaftDir)\Raft_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+
+		<Reference Include="UnityEngine.InputLegacyModule">
+			<HintPath>$(RaftDir)\Raft_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<Target Name="ValidateRaftEnvironment" BeforeTargets="ResolveReferences">
+		<Error
+			Condition="!Exists('$(RaftExePath)')"
+			Text="Raft.exe не найден: $(RaftExePath)" />
+
+		<Error
+			Condition="!Exists('$(RmlBinariesDir)\HMLCoreLibrary.dll')"
+			Text="HMLCoreLibrary.dll не найден: $(RmlBinariesDir)\HMLCoreLibrary.dll" />
+
+		<Error
+			Condition="!Exists('$(RmlBinariesDir)\coremod.dll')"
+			Text="coremod.dll не найден: $(RmlBinariesDir)\coremod.dll" />
+
+		<Error
+			Condition="!Exists('$(RmlBinariesDir)\0Harmony.dll')"
+			Text="0Harmony.dll не найден: $(RmlBinariesDir)\0Harmony.dll" />
+
+		<Error
+			Condition="!Exists('$(RmlPublicizedDir)\Assembly-CSharp.dll')"
+			Text="Publicized Assembly-CSharp.dll не найден: $(RmlPublicizedDir)\Assembly-CSharp.dll. Запусти Raft через RML хотя бы один раз" />
+
+		<Error
+			Condition="!Exists('$(RaftDir)\Raft_Data\Managed\UnityEngine.dll')"
+			Text="UnityEngine.dll не найден: $(RaftDir)\Raft_Data\Managed\UnityEngine.dll" />
+	</Target>
+
+	<Target Name="BuildRmod" AfterTargets="Build">
+		<PropertyGroup>
+			<ModName>$([System.Text.RegularExpressions.Regex]::Match('$([System.IO.File]::ReadAllText("$(ProjectDir)modinfo.json"))', '&quot;name&quot;\s*:\s*&quot;([^&quot;]+)&quot;').Groups[1].Value)</ModName>
+			<ModVersion>$([System.Text.RegularExpressions.Regex]::Match('$([System.IO.File]::ReadAllText("$(ProjectDir)modinfo.json"))', '&quot;version&quot;\s*:\s*&quot;([^&quot;]+)&quot;').Groups[1].Value)</ModVersion>
+
+			<RmodTempDir>$(BaseIntermediateOutputPath)rmod\</RmodTempDir>
+			<ReleaseDir>$(ProjectDir)..\releases\</ReleaseDir>
+			<RmodFile>$(ReleaseDir)$(ModName) v$(ModVersion).rmod</RmodFile>
+			<InstalledRmodFile>$(RaftModsDir)\$(ModName) v$(ModVersion).rmod</InstalledRmodFile>
+			<LegacyDevRmodFile>$(RaftModsDir)\DynamicOcean.dev.rmod</LegacyDevRmodFile>
+		</PropertyGroup>
+
+		<Error
+			Condition="!Exists('$(ProjectDir)modinfo.json')"
+			Text="modinfo.json не найден в корне проекта" />
+
+		<RemoveDir
+			Directories="$(RmodTempDir)"
+			Condition="Exists('$(RmodTempDir)')" />
+
+		<MakeDir Directories="$(RmodTempDir)" />
+		<MakeDir Directories="$(ReleaseDir)" />
+		<MakeDir
+			Directories="$(RaftModsDir)"
+			Condition="!Exists('$(RaftModsDir)')" />
+
+		<Exec
+			Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$src = [System.IO.Path]::GetFullPath('$(ProjectDir)'); $dst = [System.IO.Path]::GetFullPath('$(RmodTempDir)'); Get-ChildItem -LiteralPath $src -Force | Where-Object { $_.Name -ne 'bin' -and $_.Name -ne 'obj' } | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $dst -Recurse -Force }&quot;" />
+
+		<Delete
+			Files="$(RmodFile)"
+			Condition="Exists('$(RmodFile)')" />
+
+		<ZipDirectory
+			SourceDirectory="$(RmodTempDir)"
+			DestinationFile="$(RmodFile)"
+			Overwrite="true" />
+
+		<RemoveDir Directories="$(RmodTempDir)" />
+
+		<ItemGroup>
+			<OldInstalledRmods Include="$(RaftModsDir)\$(ModName) v*.rmod" />
+		</ItemGroup>
+
+		<Delete Files="@(OldInstalledRmods)" />
+
+		<Delete
+			Files="$(LegacyDevRmodFile)"
+			Condition="Exists('$(LegacyDevRmodFile)')" />
+
+		<Copy
+			SourceFiles="$(RmodFile)"
+			DestinationFiles="$(InstalledRmodFile)" />
+
+		<Message
+			Importance="high"
+			Text="Release RMod создан: $(RmodFile)" />
+
+		<Message
+			Importance="high"
+			Text="Release RMod установлен: $(InstalledRmodFile)" />
+	</Target>
+
+	<Target
+		Name="LaunchRaftAutoLoad"
+		AfterTargets="BuildRmod">
+
+		<Exec
+			Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$p = Get-Process -Name Raft -ErrorAction SilentlyContinue; if ($null -ne $p) { Write-Warning 'Raft уже запущен - закрой игру и запусти сборку ещё раз'; exit 0 }; $steam = (Get-ItemProperty -Path 'HKCU:\Software\Valve\Steam' -ErrorAction SilentlyContinue).SteamExe; if ([string]::IsNullOrWhiteSpace($steam)) { $steam = Join-Path ${env:ProgramFiles(x86)} 'Steam\steam.exe' }; if (!(Test-Path $steam)) { throw 'Steam.exe не найден' }; Start-Process -FilePath $steam -ArgumentList '-applaunch 648800','-rml','-dynamicocean-autoload'; Write-Host 'Raft запущен через Steam с RML и автозагрузкой мира'&quot;" />
+	</Target>
+
+</Project>

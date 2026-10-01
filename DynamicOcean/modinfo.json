@@ -1,0 +1,9 @@
+{
+  "name": "Dynamic Ocean",
+  "author": "El",
+  "description": "Adds changing wind direction and moving ocean currents for floating loot",
+  "version": "0.1.0",
+    "icon": "icon.png",
+  "banner": "banner.png",
+  "isModPermanent": false
+}
