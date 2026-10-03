@@ -1,9 +1,31 @@
 {
   "name": "Dynamic Ocean",
-  "author": "El",
-  "description": "Adds changing wind direction and moving ocean currents for floating loot",
-  "version": "0.1.0",
-    "icon": "icon.png",
+  "author": "El_Neuman",
+  "description": "Adds a unified changing ocean direction for currents, raft drift, wind, waves and streamers",
+  "version": "0.3.2",
+  "icon": "icon.png",
   "banner": "banner.png",
-  "isModPermanent": false
+  "isModPermanent": false,
+  "modSettings": [
+    {
+      "type": "section",
+      "text": "---- Island Loot Control",
+      "name": "IslandLootControl"
+    },
+    {
+      "type": "slider",
+      "name": "Island Loot Spawn Rate",
+      "id": "Island Loot Spawn Rate",
+      "text": "Island Loot Spawn Rate",
+      "section": "IslandLootControl",
+      "access": "both",
+      "range": {
+        "min": 0.0,
+        "max": 10.0,
+        "decimals": 1,
+        "type": "number"
+      },
+      "default": 0.5
+    }
+  ]
 }

@@ -33,11 +33,6 @@
 			<Private>false</Private>
 		</Reference>
 
-		<Reference Include="com.rlabrecque.steamworks.net">
-			<HintPath>$(RaftDir)\Raft_Data\Managed\com.rlabrecque.steamworks.net.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-
 		<Reference Include="HMLCoreLibrary">
 			<HintPath>$(RmlBinariesDir)\HMLCoreLibrary.dll</HintPath>
 			<Private>false</Private>
@@ -142,8 +137,6 @@
 			  DestinationFiles="@(DevRmodFiles->'$(DevRmodTempDir)%(RecursiveDir)%(Filename)%(Extension)')"
 			  SkipUnchangedFiles="false" />
 
-		<Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$p = '$(DevRmodTempDir)modinfo.json'; if (!(Test-Path -LiteralPath $p)) { throw 'DEV modinfo.json не найден' }; $c = [IO.File]::ReadAllText($p); if ($c -notmatch 'isModPermanent\x22\s*:') { throw 'Поле isModPermanent не найдено в modinfo.json' }; $c = [regex]::Replace($c, '(isModPermanent\x22\s*:\s*)(true|false)', '${1}true', [Text.RegularExpressions.RegexOptions]::IgnoreCase); [IO.File]::WriteAllText($p, $c, [Text.UTF8Encoding]::new($false))&quot;" />
-
 		<Delete Files="@(OldInstalledRmods)" />
 		<Delete Files="$(LegacyDevRmodFile)" Condition="Exists('$(LegacyDevRmodFile)')" />
 		<Delete Files="$(LegacyUnversionedRmodFile)" Condition="Exists('$(LegacyUnversionedRmodFile)')" />
@@ -181,8 +174,6 @@
 		<Copy SourceFiles="@(ReleaseRmodFiles)"
 			  DestinationFiles="@(ReleaseRmodFiles->'$(ReleaseRmodTempDir)%(RecursiveDir)%(Filename)%(Extension)')"
 			  SkipUnchangedFiles="false" />
-
-		<Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$p = '$(ReleaseRmodTempDir)modinfo.json'; if (!(Test-Path -LiteralPath $p)) { throw 'Release modinfo.json не найден' }; $c = [IO.File]::ReadAllText($p); if ($c -notmatch 'isModPermanent\x22\s*:') { throw 'Поле isModPermanent не найдено в modinfo.json' }; $c = [regex]::Replace($c, '(isModPermanent\x22\s*:\s*)(true|false)', '${1}false', [Text.RegularExpressions.RegexOptions]::IgnoreCase); [IO.File]::WriteAllText($p, $c, [Text.UTF8Encoding]::new($false))&quot;" />
 
 		<Delete Files="$(ReleaseRmodFile)" Condition="Exists('$(ReleaseRmodFile)')" />
 
