@@ -56,8 +56,9 @@ public class DynamicOcean : Mod
 
     private const float LootCurrentSpeed = 0.65f;
 
-    private const float OceanMinInterval = 1200f;
-    private const float OceanMaxInterval = 3600f;
+    private const float OceanDayDuration = 1200f;
+    private const float OceanMinInterval = OceanDayDuration;
+    private const int OceanDefaultMaxIntervalDays = 3;
     private const float OceanTransitionDuration = 60f;
     private const float OceanMinDirectionChange = 40f;
     private const float OceanMaxDirectionChange = 140f;
@@ -78,9 +79,13 @@ public class DynamicOcean : Mod
 
     private static bool ExtraSettingsAPI_Loaded;
     private static float islandLootSpawnRate = 1f;
+    private static int oceanMaxIntervalDays = OceanDefaultMaxIntervalDays;
 
     private const string SettingIslandLootSpawnRate =
         "Island Loot Spawn Rate";
+
+    private const string SettingOceanDirectionChangeInterval =
+        "Ocean Direction Change Interval";
 
     private sealed class IslandFlow
     {
@@ -1936,9 +1941,17 @@ public class DynamicOcean : Mod
         int seed,
         int segment)
     {
+        float maxInterval =
+            OceanDayDuration *
+            Mathf.Clamp(
+                oceanMaxIntervalDays,
+                1,
+                OceanDefaultMaxIntervalDays
+            );
+
         return Mathf.Lerp(
             OceanMinInterval,
-            OceanMaxInterval,
+            maxInterval,
             Hash01(
                 seed,
                 segment,
@@ -2051,6 +2064,8 @@ public class DynamicOcean : Mod
     {
         ExtraSettingsAPI_Loaded = false;
         islandLootSpawnRate = 1f;
+        oceanMaxIntervalDays = OceanDefaultMaxIntervalDays;
+        oceanScheduleInitialized = false;
     }
 
     public void ExtraSettingsAPI_SettingsClose()
@@ -2066,6 +2081,20 @@ public class DynamicOcean : Mod
         if (name == SettingIslandLootSpawnRate)
             return value.ToString("0.0") + "x";
 
+        if (name == SettingOceanDirectionChangeInterval)
+        {
+            int days =
+                Mathf.Clamp(
+                    Mathf.RoundToInt(value),
+                    1,
+                    OceanDefaultMaxIntervalDays
+                );
+
+            return days == 1
+                ? "1 day"
+                : "1-" + days + " days";
+        }
+
         return value.ToString("0.0");
     }
 
@@ -2073,6 +2102,9 @@ public class DynamicOcean : Mod
     {
         if (!ExtraSettingsAPI_Loaded)
             return;
+
+        int previousOceanMaxIntervalDays =
+            oceanMaxIntervalDays;
 
         try
         {
@@ -2089,6 +2121,31 @@ public class DynamicOcean : Mod
         {
             islandLootSpawnRate = 1f;
         }
+
+        try
+        {
+            oceanMaxIntervalDays =
+                Mathf.Clamp(
+                    Mathf.RoundToInt(
+                        ExtraSettingsAPI_GetSliderValue(
+                            SettingOceanDirectionChangeInterval
+                        )
+                    ),
+                    1,
+                    OceanDefaultMaxIntervalDays
+                );
+        }
+        catch
+        {
+            oceanMaxIntervalDays =
+                OceanDefaultMaxIntervalDays;
+        }
+
+        if (previousOceanMaxIntervalDays !=
+            oceanMaxIntervalDays)
+        {
+            oceanScheduleInitialized = false;
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -2097,6 +2154,9 @@ public class DynamicOcean : Mod
     {
         if (SettingName == SettingIslandLootSpawnRate)
             return 1f;
+
+        if (SettingName == SettingOceanDirectionChangeInterval)
+            return OceanDefaultMaxIntervalDays;
 
         return 0f;
     }
